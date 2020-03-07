@@ -1,0 +1,20 @@
+drop table authors;
+create table if not exists authors(
+    id       bigint not null unique,
+    name     varchar(100) not null,
+	description varchar(500) not null
+);
+insert into authors(id, name, description)
+values
+(1, 'Hearst Communications', 'Hearst Communications, often referred to simply as Hearst, is an American mass media and business information conglomerate based in the Hearst Tower in Midtown Manhattan, New York City.');
+insert into authors(id, name, description)
+values
+(2, 'Condé Nast Inc', 'Condé Nast Inc. is an American mass media company founded in 1909 by Condé Montrose Nast, based at One World Trade Center in Manhattan and owned by Advance Publications');
+insert into authors(id, name, description)
+values
+(3, 'Hachette', 'Hachette (French pronunciation: ​[a.ʃɛt]) is a French publisher. Founded in 1826 by Louis Hachette as Brédif, the company later became L. Hachette et Compagnie, Librairie Hachette, Hachette SA and Hachette Livre in France. After acquiring an Australian publisher, Hachette Australia was created; in the UK it became Hachette UK, and its expansion into the United States became Hachette Book Group USA.');
+select * from authors;
+insert into authors(id, name, description) values (4, 'HT Media',
+        'HT Media is an Indian mass media company based in Delhi, India. It has holdings in print, electronic and digital media.');
+insert into authors(id, name, description) values (5, 'Marvel Comics',
+        'Marvel Comics is the brand name and primary imprint of Marvel Worldwide Inc., formerly Marvel Publishing, Inc. and Marvel Comics Group, a publisher of American comic books and related media. In 2009, The Walt Disney Company acquired Marvel Entertainment, Marvel Worldwides parent company');

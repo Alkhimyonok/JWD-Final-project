@@ -1,0 +1,6 @@
+create table if not exists admin
+(
+    email    varchar(100) not null unique,
+    password varchar(100) not null
+);
+insert into admin values('admin@gmail.ru', 'bf2832fc1eb50f0bf536d1b64a0cbfb3');

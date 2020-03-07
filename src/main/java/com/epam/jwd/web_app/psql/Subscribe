@@ -1,0 +1,10 @@
+create TYPE statusSubscribe AS ENUM ('in process', 'done', 'credit');
+drop table subscribe;
+create table if not exists subscribe
+(
+    id        bigint not null unique,
+    idUser    bigint not null,
+    idEdition bigint not null,
+    date      date            default now(),
+    status    statusSubscribe default 'done'
+);

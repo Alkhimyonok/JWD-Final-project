@@ -1,0 +1,8 @@
+create table if not exists bankBill
+(
+    id   bigint not null unique,
+    code bigint not null,
+    bill bigint
+);
+insert into bankBill(id, code, bill)
+values (0, 0, 10000);

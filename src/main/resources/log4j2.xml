@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+
+    <Appenders>
+        <File name="logFile" fileName="logs/app.log" bufferedIO="true">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %c{3} [%p] %m%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="debug" additivity="false">
+            <AppenderRef ref="logFile"/>
+        </Root>
+    </Loggers>
+</Configuration>

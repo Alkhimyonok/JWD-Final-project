@@ -1,0 +1,34 @@
+create TYPE typeEdition AS ENUM ('magazine', 'newspaper', 'comics');
+create TYPE statusEdition AS ENUM ('do', 'block');
+create table if not exists editions
+(
+    id               bigint       not null unique,
+    type             typeEdition,
+    idAuthor         bigint       not null,
+    title            varchar(50)  not null,
+    description      varchar(500) not null,
+    pathImg          varchar(1000) not null,
+    priceMonth       bigint       not null,
+    countSubscribers bigint        default '0',
+    status           statusEdition default 'do'
+);
+insert into editions(id, type, idAuthor, title, description, pathImg, priceMonth)
+values (1, 'magazine', 1, 'Cosmopolitan',
+        'Cosmopolitan is an international fashion and entertainment magazine for women that was formerly titled The Cosmopolitan. Cosmopolitan magazine is one of the best-selling magazines and is directed mainly towards a female audience.[1] Jessica Pels is the editor-in-chief of Cosmopolitan magazine.[2] The magazine was first published and distributed in 1886 in the United States as a family magazine; it was later transformed into a literary magazine and since 1965 has become a womens magazine.',
+        'magazines/cosmopolitanMain.jpg', 20);
+insert into editions(id, type, idAuthor, title, description, pathImg, priceMonth)
+values (2, 'magazine', 2, 'Vogue',
+        'Vogue is a fashion and lifestyle magazine covering many topics including fashion, beauty, culture, living, and runway. Vogue began as a weekly newspaper in 1892 in the United States, before becoming a monthly publication years later.',
+        'magazines/VogueMain.jpg', 40);
+insert into editions(id, type, idAuthor, title, description, pathImg, priceMonth)
+values (3, 'magazine', 3, 'Elle',
+        'Elle (stylized ELLE) is a worldwide lifestyle magazine of French origin that focuses on fashion, beauty, health and entertainment. It was founded in 1945 by Hélène Gordon-Lazareff and her husband, the writer Pierre Lazareff. The title means "she" or "her" in French.',
+        'magazines/elleMain.jpg', 35);
+insert into editions(id, type, idAuthor, title, description, pathImg, priceMonth)
+values (4, 'newspaper', 4, 'Hindustan Times',
+        'Hindustan Times is an Indian English-language daily newspaper. Inaugurated by Mahatma Gandhi in 1924, it played integral roles in the Indian independence movement as a nationalist and pro-Congress daily. The newspaper is owned by Congress legislator of Rajya Sabha Shobhana Bhartia. It is the flagship publication of HT Media, an entity controlled by the KK Birla family',
+        'newspapers/ht.jpg', 25);
+insert into editions(id, type, idAuthor, title, description, pathImg, priceMonth)
+values (5, 'comics', 5, 'Fantastic Four',
+        'The Fantastic Four is a fictional superhero team appearing in American comic books published by Marvel Comics. The group debuted in Fantastic Four #1 (cover dated Nov. 1961), which helped to usher in a new level of realism in the medium. The Fantastic Four was the first superhero team created by artist/co-plotter Jack Kirby and editor/co-plotter Stan Lee, who developed a collaborative approach to creating comics with this title that they would use from then on.',
+        'comics/fantasticFour.jpg', 40);

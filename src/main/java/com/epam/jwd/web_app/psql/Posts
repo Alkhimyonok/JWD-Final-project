@@ -1,0 +1,9 @@
+create table if not exists posts(
+    idEdition  bigint not null,
+	post varchar(1000) not null,
+	pathImg varchar(1000) not null,
+	date date not null
+);
+insert into posts(idEdition, post, pathImg, date) values ( 1, 'posts/cosmopolitan20200130.html', 'magazines/cosmopolitan20200130.jpg', '20200130');
+insert into posts(idEdition, post, pathImg, date) values( 2, 'posts/vogue20200128.html', 'magazines/vogue20200128.jpg', '20200128');
+insert into posts(idEdition, post, pathImg, date) values( 3, 'posts/elle20200129.html', 'magazines/elle20200129.jpg', '20200129');
