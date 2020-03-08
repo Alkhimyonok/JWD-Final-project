@@ -2,6 +2,7 @@ package com.epam.jwd.web_app.service.impl;
 
 import com.epam.jwd.web_app.bean.Author;
 import com.epam.jwd.web_app.bean.Edition;
+import com.epam.jwd.web_app.controller.command.Command;
 import com.epam.jwd.web_app.dao.AuthorDao;
 import com.epam.jwd.web_app.dao.DaoFactory;
 import com.epam.jwd.web_app.dao.EditionDao;
@@ -9,98 +10,39 @@ import com.epam.jwd.web_app.dao.exception.DaoException;
 import com.epam.jwd.web_app.dao.impl.EditionDaoImpl;
 import com.epam.jwd.web_app.dao.util.UtilDao;
 import com.epam.jwd.web_app.service.EditionService;
+import com.epam.jwd.web_app.service.PostService;
 import com.epam.jwd.web_app.service.exception.ServiceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 public class EditionServiceImpl implements EditionService {
+    /**
+     * Implements {@link EditionService} interface.
+     *
+     * @see EditionDao
+     * @see AuthorDao
+     */
 
     private static final Logger logger = LogManager.getLogger(EditionServiceImpl.class);
 
     private AuthorDao authorDao = DaoFactory.getInstance().getAuthorDao();
     private EditionDao editionDao = DaoFactory.getInstance().getEditionDao();
 
-    @Override
-    public Edition getEditionById(long idEdition) throws ServiceException {
-        EditionDao editionDao = DaoFactory.getInstance().getEditionDao();
-        try {
-            return editionDao.getEditionById(idEdition);
-        } catch (DaoException e) {
-            throw new ServiceException();
-        }
-    }
-
     /**
-     * @param type String typeEdition(magazine, newspaper, comics)
-     * @return List Edition
-     * @throws ServiceException if error Dao
+     * Delete blocked edition from list.
+     *
+     * @param editionList List Edition
      */
-    @Override
-    public List<Edition> getListByType(String type) throws ServiceException {
-        EditionDao editionDao = DaoFactory.getInstance().getEditionDao();
-        if (type.equals("")) {
-            try {
-                return editionDao.getAllList();
-            } catch (DaoException e) {
-                throw new ServiceException();
+    private void deleteBlockEdition(List<Edition> editionList) {
+        for (Edition edition : editionList) {
+            if (edition.getStatus().equals("block")) {
+                editionList.remove(edition);
             }
-        } else {
-            try {
-                return editionDao.getListByType(type);
-            } catch (DaoException e) {
-                throw new ServiceException();
-            }
-        }
-    }
-
-    /**
-     * @return List Edition
-     * @throws ServiceException if error Dao
-     * @see com.epam.jwd.web_app.controller.command.impl.IndexCommand
-     */
-    @Override
-    public List<Edition> getTopList() throws ServiceException {
-        try {
-            return editionDao.getTopList();
-        } catch (DaoException e) {
-            throw new ServiceException();
-        }
-    }
-
-    @Override
-    public List<Edition> getListByParameters(String title, String author) throws ServiceException {
-        EditionDao editionDao = DaoFactory.getInstance().getEditionDao();
-        if (title.equals("") && author.equals("")) {
-            throw new ServiceException("locale.err.noFull");
-        }
-        try {
-            return editionDao.getListByParameters(title, author);
-        } catch (DaoException e) {
-            if (e.getMessage() != null) {
-                throw new ServiceException(e.getMessage());
-            }
-            throw new ServiceException();
-        }
-    }
-
-    /**
-     * @param idAuthor long
-     * @return List Edition
-     * @throws ServiceException
-     * @see com.epam.jwd.web_app.controller.command.impl.DetailAuthorCommand
-     * Get sort by count subscribers list.
-     */
-    @Override
-    public List<Edition> getEditionListByIdAuthor(long idAuthor) throws ServiceException {
-        EditionDao editionDao = DaoFactory.getInstance().getEditionDao();
-        try {
-            return sortByCountSubscribers(editionDao.getListByIdAuthor(idAuthor));
-        } catch (DaoException e) {
-            throw new ServiceException();
         }
     }
 
@@ -123,6 +65,119 @@ public class EditionServiceImpl implements EditionService {
             }
         });
         return editions;
+    }
+
+    /**
+     * @param idEdition long
+     * @return Edition
+     * @throws ServiceException if error Dao
+     */
+    @Override
+    public Edition getEditionById(long idEdition) throws ServiceException {
+        try {
+            return editionDao.getEditionById(idEdition);
+        } catch (DaoException e) {
+            throw new ServiceException();
+        }
+    }
+
+    /**
+     * Get List Edition sort by count subscribers and delete blocked editions.
+     *
+     * @param type String typeEdition(magazine, newspaper, comics)
+     * @return List Edition
+     * @throws ServiceException if error Dao
+     * @see com.epam.jwd.web_app.controller.command.impl.ListEditionsCommand
+     */
+    @Override
+    public List<Edition> getListByType(String type) throws ServiceException {
+        List<Edition> editionList;
+        if (type.equals("")) {
+            try {
+                editionList = editionDao.getAllList();
+                sortByCountSubscribers(editionList);
+                deleteBlockEdition(editionList);
+                return editionList;
+            } catch (DaoException e) {
+                throw new ServiceException();
+            }
+        } else {
+            try {
+                editionList = editionDao.getListByType(type);
+                sortByCountSubscribers(editionList);
+                deleteBlockEdition(editionList);
+                return editionList;
+            } catch (DaoException e) {
+                throw new ServiceException();
+            }
+        }
+    }
+
+    /**
+     * Get List Edition without blocked editions.
+     *
+     * @return List Edition
+     * @throws ServiceException if error Dao
+     * @see com.epam.jwd.web_app.controller.command.impl.IndexCommand
+     */
+    @Override
+    public List<Edition> getTopList() throws ServiceException {
+        try {
+            List<Edition> editionList = editionDao.getTopList();
+            deleteBlockEdition(editionList);
+            return editionList;
+        } catch (DaoException e) {
+            throw new ServiceException();
+        }
+    }
+
+    /**
+     * Get List Edition by parameters, sort by count subscribers and delete blocked editions.
+     *
+     * @param title  String
+     * @param author String
+     * @return List Edition
+     * @throws ServiceException if no full info or error Dao
+     * @see com.epam.jwd.web_app.controller.command.impl.SearchCommand
+     */
+    @Override
+    public List<Edition> getListByParameters(String title, String author) throws ServiceException {
+        EditionDao editionDao = DaoFactory.getInstance().getEditionDao();
+        if (title.equals("") && author.equals("")) {
+            throw new ServiceException("locale.err.noFull");
+        }
+        try {
+            List<Edition> searchList = editionDao.getListByParameters(title, author);
+            sortByCountSubscribers(searchList);
+            deleteBlockEdition(searchList);
+            return searchList;
+        } catch (DaoException e) {
+            if (e.getMessage() != null) {
+                throw new ServiceException(e.getMessage());
+            }
+            throw new ServiceException();
+        }
+    }
+
+    /**
+     * Get List Edition by id author, sort by count subscribers and delete blocked editions.
+     *
+     * @param idAuthor long
+     * @return List Edition
+     * @throws ServiceException
+     * @see com.epam.jwd.web_app.controller.command.impl.DetailAuthorCommand
+     */
+    @Override
+    public List<Edition> getEditionListByIdAuthor(long idAuthor) throws ServiceException {
+        EditionDao editionDao = DaoFactory.getInstance().getEditionDao();
+        try {
+            List<Edition> searchList = editionDao.getListByIdAuthor(idAuthor);
+            sortByCountSubscribers(searchList);
+            deleteBlockEdition(searchList);
+            return searchList;
+        } catch (DaoException e) {
+            throw new ServiceException();
+        }
     }
 
     /**

@@ -3,6 +3,7 @@ package com.epam.jwd.web_app.dao.impl;
 import com.epam.jwd.web_app.bean.Edition;
 import com.epam.jwd.web_app.bean.Post;
 import com.epam.jwd.web_app.bean.Subscribe;
+import com.epam.jwd.web_app.controller.command.impl.ListSubscriptionsCommand;
 import com.epam.jwd.web_app.dao.DaoFactory;
 import com.epam.jwd.web_app.dao.EditionDao;
 import com.epam.jwd.web_app.dao.PostDao;
@@ -21,18 +22,22 @@ public class PostDaoImpl implements PostDao {
     private static final Logger logger = LogManager.getLogger(PostDaoImpl.class);
 
     private SubscribeDao subscribeDao = DaoFactory.getInstance().getSubscribeDao();
-    private EditionDao editionDao = DaoFactory.getInstance().getEditionDao();
 
     private static final ConnectionPool POOL = ConnectionPool.getInstance();
 
-    private final static String SELECT_ORDER_DATE_LIMIT = "SELECT * FROM posts ORDER BY date DESC LIMIT 4;";
+    private final static String SELECT_ORDER_DATE_LIMIT = "SELECT posts.idEdition, posts.post, posts.pathImg, posts.date" +
+            " FROM posts inner join editions on posts.idEdition=editions.id where editions.status<>'block'::statusEdition" +
+            " ORDER BY date DESC LIMIT 4;";
     private final static String SELECT_BY_EDITION = "SELECT * FROM posts WHERE idEdition=?;";
+    private final static String SELECT_BY_USER_STATUS = "SELECT posts.idEdition, posts.post, posts.pathImg, posts.date " +
+            "FROM posts inner join subscribe on posts.idEdition=subscribe.idEdition " +
+            "WHERE subscribe.idUser=? AND subscribe.status=?::statusSubscribe;";
     private final static String DELETE_BY_POST = "DELETE from posts where post=?;";
     private final static String INSERT = "INSERT INTO posts(idEdition, post, pathImg, date) VALUES (?, ?, ?, NOW());";
 
     private final static int ID_COLUMN = 1;
     private final static int POST_COLUMN = 2;
-    private final static int PATHIMG_COLUMN = 3;
+    private final static int PATH_IMG_COLUMN = 3;
     private final static int DATE_COLUMN = 4;
 
     private Map<String, PreparedStatement> preparedStatementMap = new HashMap<>();
@@ -43,19 +48,10 @@ public class PostDaoImpl implements PostDao {
             setPreparedStatement(connection, SELECT_BY_EDITION);
             setPreparedStatement(connection, DELETE_BY_POST);
             setPreparedStatement(connection, INSERT);
+            setPreparedStatement(connection, SELECT_BY_USER_STATUS);
         } catch (ConnectionPoolException | SQLException | DaoException e) {
             logger.error(e.getMessage());
         }
-    }
-
-    private Post createPost(ResultSet resultSet) throws SQLException, DaoException {
-        EditionDao editionDao = DaoFactory.getInstance().getEditionDao();
-        long idEdition = resultSet.getLong(ID_COLUMN);
-        Edition edition = editionDao.getEditionById(idEdition);
-        String post = resultSet.getString(POST_COLUMN);
-        String pathImg = resultSet.getString(PATHIMG_COLUMN);
-        Date date = resultSet.getDate(DATE_COLUMN);
-        return new Post(edition, post, pathImg, date);
     }
 
     private void setPreparedStatement(Connection connection, String sql) throws DaoException {
@@ -71,10 +67,22 @@ public class PostDaoImpl implements PostDao {
         }
     }
 
+    private Post createPost(ResultSet resultSet) throws SQLException, DaoException {
+        EditionDao editionDao = DaoFactory.getInstance().getEditionDao();
+        long idEdition = resultSet.getLong(ID_COLUMN);
+        Edition edition = editionDao.getEditionById(idEdition);
+        String post = resultSet.getString(POST_COLUMN);
+        String pathImg = resultSet.getString(PATH_IMG_COLUMN);
+        Date date = resultSet.getDate(DATE_COLUMN);
+        return new Post(edition, post, pathImg, date);
+    }
+
     /**
+     * Get List Post size 4 sort by date without blocked editions
+     *
+     * @return List Post
+     * @throws DaoException if error Jdbc
      * @see com.epam.jwd.web_app.controller.command.impl.IndexCommand
-     * @return List Post size 4 sort by date
-     * @throws DaoException if error JDBC
      */
     @Override
     public List<Post> getNovelty() throws DaoException {
@@ -97,23 +105,22 @@ public class PostDaoImpl implements PostDao {
      * @param status String status(good, block)
      * @return List Post
      * @throws DaoException if error JDBC
+     * @see com.epam.jwd.web_app.controller.command.impl.ListSubscriptionsCommand
      */
     @Override
     public List<Post> getListForUserByStatus(long idUser, String status) throws DaoException {
-        List<Subscribe> subscribeList = subscribeDao.getListForUserByStatus(idUser, status);
         List<Post> postList = new ArrayList<>();
-        for (Subscribe subscribe : subscribeList) {
-            try {
-                PreparedStatement preparedStatement = preparedStatementMap.get(SELECT_BY_EDITION);
-                preparedStatement.setLong(1, subscribe.getEdition().getId());
-                ResultSet resultSet = preparedStatement.executeQuery();
-                while (resultSet.next()) {
-                    postList.add(createPost(resultSet));
-                }
-            } catch (SQLException e) {
-                logger.error(e.getMessage());
-                throw new DaoException();
+        try {
+            PreparedStatement preparedStatement = preparedStatementMap.get(SELECT_BY_USER_STATUS);
+            preparedStatement.setLong(1, idUser);
+            preparedStatement.setString(2, status);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                postList.add(createPost(resultSet));
             }
+        } catch (SQLException e) {
+            logger.error(e.getMessage());
+            throw new DaoException();
         }
         return postList;
     }
@@ -140,10 +147,10 @@ public class PostDaoImpl implements PostDao {
         return posts;
     }
 
-    /** @see com.epam.jwd.web_app.controller.command.impl.DeletePostCommand
-     *
+    /**
      * @param post String
      * @throws DaoException if error Jdbc
+     * @see com.epam.jwd.web_app.controller.command.impl.DeletePostCommand
      */
     @Override
     public void deletePostByPost(String post) throws DaoException {

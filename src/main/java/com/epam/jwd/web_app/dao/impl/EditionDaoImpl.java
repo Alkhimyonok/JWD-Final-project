@@ -20,7 +20,7 @@ public class EditionDaoImpl implements EditionDao {
 
     private static final String SELECT = "SELECT * FROM editions;";
     private static final String SELECT_BY_ID = "SELECT * FROM editions WHERE id=?;";
-    private static final String SELECT_ORDER_SUBSCRIBERS_LIMIT = "SELECT * FROM editions ORDER BY countSubscribers DESC LIMIT 4;";
+    private static final String SELECT_ORDER_SUBSCRIBERS_LIMIT = "SELECT * FROM editions WHERE status<>'block'::statusEdition ORDER BY countSubscribers DESC LIMIT 4;";
     private static final String SELECT_BY_TYPE = "SELECT * FROM editions where type=?::typeEdition;";
     private static final String UPDATE_SUBSCRIBERS =
             "UPDATE editions SET countSubscribers=? WHERE id=?;";
@@ -33,16 +33,16 @@ public class EditionDaoImpl implements EditionDao {
 
     private static final int ID_COLUMN = 1;
     private static final int TYPE_COLUMN = 2;
-    private static final int IDAUTHOR_COLUMN = 3;
+    private static final int ID_AUTHOR_COLUMN = 3;
     private static final int TITLE_COLUMN = 4;
     private static final int DESCRIPTION_COLUMN = 5;
-    private static final int PATHIMG_COLUMN = 6;
-    private static final int PRICEMONTH_COLUMN = 7;
-    private static final int COUNTSUBSCRIBERS_COLUMN = 8;
+    private static final int PATH_IMG_COLUMN = 6;
+    private static final int PRICE_MONTH_COLUMN = 7;
+    private static final int COUNT_SUBSCRIBERS_COLUMN = 8;
     private static final int STATUS_COLUMN = 9;
 
-
     private Map<String, PreparedStatement> preparedStatementMap = new HashMap<>();
+    private static List<Edition> topList = new ArrayList<>();
 
     public EditionDaoImpl() {
         try (Connection connection = POOL.takeConnection()) {
@@ -78,13 +78,13 @@ public class EditionDaoImpl implements EditionDao {
         AuthorDao authorDao = DaoFactory.getInstance().getAuthorDao();
         long id = resultSet.getLong(ID_COLUMN);
         String type = resultSet.getString(TYPE_COLUMN);
-        long idAuthor = resultSet.getLong(IDAUTHOR_COLUMN);
+        long idAuthor = resultSet.getLong(ID_AUTHOR_COLUMN);
         Author author = authorDao.getAuthorById(idAuthor);
         String title = resultSet.getString(TITLE_COLUMN);
         String description = resultSet.getString(DESCRIPTION_COLUMN);
-        long priceMonth = resultSet.getLong(PRICEMONTH_COLUMN);
-        long countSubscribers = resultSet.getLong(COUNTSUBSCRIBERS_COLUMN);
-        String pathImg = resultSet.getString(PATHIMG_COLUMN);
+        long priceMonth = resultSet.getLong(PRICE_MONTH_COLUMN);
+        long countSubscribers = resultSet.getLong(COUNT_SUBSCRIBERS_COLUMN);
+        String pathImg = resultSet.getString(PATH_IMG_COLUMN);
         String status = resultSet.getString(STATUS_COLUMN);
         return new Edition(id, type, author, title, description, pathImg, priceMonth, countSubscribers, status);
     }
@@ -187,25 +187,32 @@ public class EditionDaoImpl implements EditionDao {
     }
 
     /**
-     * @return List Edition size 4 sort by count subscribers.
+     * Get List Edition size 4 sort by count subscribers and without blocked editions.
+     * Update list for each request.
+     *
+     * @return List Edition static
      * @throws DaoException if error JDBC
      * @see com.epam.jwd.web_app.controller.command.impl.IndexCommand
      */
     @Override
     public List<Edition> getTopList() throws DaoException {
-        List<Edition> list = new ArrayList<>();
         try {
             PreparedStatement preparedStatement = preparedStatementMap.get(SELECT_ORDER_SUBSCRIBERS_LIMIT);
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 Edition edition = createEdition(resultSet);
-                list.add(edition);
+                topList.add(edition);
+                if (topList.size() > 4) {
+                    for (int i = 0; i < 4; i++) {
+                        topList.remove(i);
+                    }
+                }
             }
         } catch (SQLException e) {
             logger.error(e.getMessage());
             throw new DaoException();
         }
-        return list;
+        return topList;
     }
 
     /**
