@@ -2,23 +2,17 @@ package com.epam.jwd.web_app.service.impl;
 
 import com.epam.jwd.web_app.bean.Author;
 import com.epam.jwd.web_app.bean.Edition;
-import com.epam.jwd.web_app.controller.command.Command;
 import com.epam.jwd.web_app.dao.AuthorDao;
 import com.epam.jwd.web_app.dao.DaoFactory;
 import com.epam.jwd.web_app.dao.EditionDao;
 import com.epam.jwd.web_app.dao.exception.DaoException;
-import com.epam.jwd.web_app.dao.impl.EditionDaoImpl;
 import com.epam.jwd.web_app.dao.util.UtilDao;
 import com.epam.jwd.web_app.service.EditionService;
-import com.epam.jwd.web_app.service.PostService;
 import com.epam.jwd.web_app.service.exception.ServiceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class EditionServiceImpl implements EditionService {
     /**
@@ -39,9 +33,10 @@ public class EditionServiceImpl implements EditionService {
      * @param editionList List Edition
      */
     private void deleteBlockEdition(List<Edition> editionList) {
-        for (Edition edition : editionList) {
-            if (edition.getStatus().equals("block")) {
-                editionList.remove(edition);
+        Iterator<Edition> iterator = editionList.iterator();
+        while (iterator.hasNext()){
+            if(iterator.next().getStatus().equals("block")){
+                iterator.remove();
             }
         }
     }
@@ -124,7 +119,6 @@ public class EditionServiceImpl implements EditionService {
     public List<Edition> getTopList() throws ServiceException {
         try {
             List<Edition> editionList = editionDao.getTopList();
-            deleteBlockEdition(editionList);
             return editionList;
         } catch (DaoException e) {
             throw new ServiceException();
