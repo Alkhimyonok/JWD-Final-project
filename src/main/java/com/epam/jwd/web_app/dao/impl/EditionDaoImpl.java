@@ -202,10 +202,12 @@ public class EditionDaoImpl implements EditionDao {
             while (resultSet.next()) {
                 Edition edition = createEdition(resultSet);
                 topList.add(edition);
-                if (topList.size() > 4) {
-                    for (int i = 0; i < 4; i++) {
-                        topList.remove(i);
-                    }
+            }
+            if (topList.size() > 4) {
+                Iterator<Edition> iterator = topList.iterator();
+                for (int i = 0; i < 4; i++) {
+                    iterator.next();
+                    iterator.remove();
                 }
             }
         } catch (SQLException e) {
